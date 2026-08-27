@@ -14,6 +14,11 @@ from app.schemas.event import (
     EventRead,
 )
 
+from uuid import UUID
+from datetime import datetime
+from fastapi import Query
+
+
 router = APIRouter(prefix="/api/v1/events", tags=["events"])
 
 
@@ -96,8 +101,28 @@ async def get_events(
     limit: int = 50,
     cursor: int | None = None,
     session: AsyncSession = Depends(get_session),
+    source_id: UUID | None = None,
+    severity: int | None = None,
+    event_type: str | None = None,
+    from_: datetime | None = Query(default=None, alias="from"),
+    to: datetime | None = None,
 ) -> EventListResponse:
     query = select(Event).order_by(Event.id.desc()).limit(limit)
+
+    if severity is not None:
+        query = query.where(Event.severity == severity)
+
+    if event_type is not None:
+        query = query.where(Event.event_type == event_type)
+
+    if source_id is not None:
+        query = query.where(Event.source_id == source_id)
+
+    if from_ is not None:
+        query = query.where(Event.occurred_at >= from_)
+
+    if to is not None:
+        query = query.where(Event.occurred_at <= to)
 
     if cursor is not None:
         query = query.where(Event.id < cursor)
