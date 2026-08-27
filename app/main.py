@@ -2,12 +2,14 @@ from fastapi import FastAPI
 from sqlalchemy import text
 
 from app.api.sources import router as sources_router
+from app.api.events import router as events_router
 from app.db import engine
 from app.redis_client import redis_client
 
 app = FastAPI()
 
 app.include_router(sources_router)
+app.include_router(events_router)
 
 
 @app.get("/health")
