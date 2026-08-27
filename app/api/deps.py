@@ -2,6 +2,7 @@ from collections.abc import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db import SessionLocal
 from app.models.source import Source
+from app.services.ratelimit import WINDOW_SEC, check_rate_limit
 from fastapi import Depends, Header, HTTPException, status
 from sqlalchemy import select
 
@@ -36,6 +37,21 @@ async def get_current_source(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Source is inactive",
+        )
+
+    return source
+
+
+async def get_rate_limited_source(
+    source: Source = Depends(get_current_source),
+) -> Source:
+    allowed = await check_rate_limit(source.id)
+
+    if not allowed:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Rate limit exceeded",
+            headers={"Retry-After": str(WINDOW_SEC)},
         )
 
     return source

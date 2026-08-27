@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.dialects.postgresql import insert
 
-from app.api.deps import get_current_source, get_session
+from app.api.deps import get_rate_limited_source, get_session
 from app.models.event import Event
 from app.models.source import Source
 from app.schemas.event import (
@@ -26,7 +26,7 @@ router = APIRouter(prefix="/api/v1/events", tags=["events"])
 async def create_event(
     event: EventCreate,
     response: Response,
-    source: Source = Depends(get_current_source),
+    source: Source = Depends(get_rate_limited_source),
     session: AsyncSession = Depends(get_session),
 ) -> Event:
     source_id = source.id
@@ -65,7 +65,7 @@ async def create_event(
 @router.post("/batch", status_code=status.HTTP_201_CREATED)
 async def create_events_batch(
     batch: EventBatchCreate,
-    source: Source = Depends(get_current_source),
+    source: Source = Depends(get_rate_limited_source),
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, int]:
     source_id = source.id
