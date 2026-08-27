@@ -7,7 +7,12 @@ from sqlalchemy.dialects.postgresql import insert
 from app.api.deps import get_current_source, get_session
 from app.models.event import Event
 from app.models.source import Source
-from app.schemas.event import EventBatchCreate, EventCreate, EventRead
+from app.schemas.event import (
+    EventBatchCreate,
+    EventCreate,
+    EventListResponse,
+    EventRead,
+)
 
 router = APIRouter(prefix="/api/v1/events", tags=["events"])
 
@@ -84,3 +89,25 @@ async def create_events_batch(
     await session.commit()
 
     return {"inserted": result.rowcount}
+
+
+@router.get("", response_model=EventListResponse)
+async def get_events(
+    limit: int = 50,
+    cursor: int | None = None,
+    session: AsyncSession = Depends(get_session),
+) -> EventListResponse:
+    query = select(Event).order_by(Event.id.desc()).limit(limit)
+
+    if cursor is not None:
+        query = query.where(Event.id < cursor)
+
+    result = await session.execute(query)
+    events = list(result.scalars().all())
+
+    next_cursor = events[-1].id if events else None
+
+    return EventListResponse(
+        items=events,
+        next_cursor=next_cursor,
+    )

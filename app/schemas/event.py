@@ -28,3 +28,8 @@ class EventRead(BaseModel):
 
 class EventBatchCreate(BaseModel):
     events: list[EventCreate] = Field(min_length=1, max_length=500)
+
+
+class EventListResponse(BaseModel):
+    items: list[EventRead]
+    next_cursor: int | None
