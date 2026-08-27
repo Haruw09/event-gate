@@ -2,11 +2,12 @@ from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.dialects.postgresql import insert
 
 from app.api.deps import get_current_source, get_session
 from app.models.event import Event
 from app.models.source import Source
-from app.schemas.event import EventCreate, EventRead
+from app.schemas.event import EventBatchCreate, EventCreate, EventRead
 
 router = APIRouter(prefix="/api/v1/events", tags=["events"])
 
@@ -49,3 +50,37 @@ async def create_event(
 
     await session.refresh(db_event)
     return db_event
+
+
+@router.post("/batch", status_code=status.HTTP_201_CREATED)
+async def create_events_batch(
+    batch: EventBatchCreate,
+    source: Source = Depends(get_current_source),
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, int]:
+    source_id = source.id
+
+    values = [
+        {
+            "source_id": source_id,
+            "external_id": event.external_id,
+            "severity": event.severity,
+            "event_type": event.event_type,
+            "payload": event.payload,
+            "occurred_at": event.occurred_at,
+        }
+        for event in batch.events
+    ]
+
+    stmt = (
+        insert(Event)
+        .values(values)
+        .on_conflict_do_nothing(
+            constraint="uq_events_source_external"
+        )
+    )
+
+    result = await session.execute(stmt)
+    await session.commit()
+
+    return {"inserted": result.rowcount}

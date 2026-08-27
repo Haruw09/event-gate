@@ -24,3 +24,7 @@ class EventRead(BaseModel):
     ingested_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class EventBatchCreate(BaseModel):
+    events: list[EventCreate] = Field(min_length=1, max_length=500)
