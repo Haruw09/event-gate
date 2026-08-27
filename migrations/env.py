@@ -9,6 +9,9 @@ from alembic import context
 
 from app.config import settings
 from app.models.base import Base
+from app.models.alert import Alert  # noqa: F401
+from app.models.event import Event  # noqa: F401
+from app.models.rule import Rule  # noqa: F401
 from app.models.source import Source  # noqa: F401
 
 # this is the Alembic Config object, which provides
