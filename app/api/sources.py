@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 from app.api.deps import get_session
 from app.models.source import Source
@@ -23,3 +24,11 @@ async def create_source(
     await session.refresh(db_source)
 
     return db_source
+
+
+@router.get("", response_model=list[SourceRead])
+async def get_sources(
+    session: AsyncSession = Depends(get_session),
+) -> list[Source]:
+    result = await session.execute(select(Source))
+    return list(result.scalars().all())
