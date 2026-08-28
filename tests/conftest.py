@@ -4,10 +4,14 @@ import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import delete
 
-os.environ["DATABASE_URL"] = (
-    "postgresql+asyncpg://postgres:postgres@localhost:5433/event_gate_test"
+os.environ.setdefault(
+    "DATABASE_URL",
+    "postgresql+asyncpg://postgres:postgres@localhost:5433/event_gate_test",
 )
-os.environ["REDIS_URL"] = "redis://localhost:6380/0"
+os.environ.setdefault(
+    "REDIS_URL",
+    "redis://localhost:6380/0",
+)
 
 
 from app.db import engine
