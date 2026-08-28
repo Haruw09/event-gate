@@ -3,9 +3,9 @@ from datetime import timedelta
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.alert import Alert
 from app.models.event import Event
 from app.models.rule import Rule
-from app.models.alert import Alert
 
 
 async def get_matching_rules(

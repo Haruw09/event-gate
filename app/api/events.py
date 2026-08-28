@@ -1,12 +1,17 @@
-from fastapi import APIRouter, Depends, Response, status
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.dialects.postgresql import insert
+import logging
+from datetime import datetime
+from uuid import UUID
 
-from app.api.deps import get_rate_limited_source, get_session
+from fastapi import APIRouter, Depends, Header, Query, Response, status
+from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.api.deps import get_current_source, get_rate_limited_source, get_session
 from app.models.event import Event
 from app.models.source import Source
+from app.redis_client import redis_client
 from app.schemas.event import (
     EventBatchCreate,
     EventCreate,
@@ -14,14 +19,6 @@ from app.schemas.event import (
     EventRead,
 )
 from app.services.correlation import create_alerts_for_event
-from app.redis_client import redis_client
-
-from uuid import UUID
-from datetime import datetime
-from fastapi import Query, APIRouter, Depends, Response, Header
-
-import logging
-
 
 IDEMPOTENCY_TTL_SEC = 24 * 60 * 60
 
@@ -149,6 +146,7 @@ async def create_events_batch(
 async def get_events(
     limit: int = 50,
     cursor: int | None = None,
+    source: Source = Depends(get_current_source),
     session: AsyncSession = Depends(get_session),
     source_id: UUID | None = None,
     severity: int | None = None,

@@ -1,15 +1,12 @@
-from fastapi import APIRouter, Depends
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_session
 from app.models.alert import Alert
 from app.schemas.alert import AlertRead, AlertStatus, AlertUpdate
-
-from uuid import UUID
-
-from fastapi import HTTPException
-
 
 router = APIRouter(prefix="/api/v1/alerts", tags=["alerts"])
 

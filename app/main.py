@@ -1,16 +1,15 @@
+import logging
+
 from fastapi import FastAPI
 from sqlalchemy import text
 
-from app.api.sources import router as sources_router
+from app.api.alerts import router as alerts_router
 from app.api.events import router as events_router
 from app.api.rules import router as rules_router
-from app.api.alerts import router as alerts_router
+from app.api.sources import router as sources_router
 from app.api.stats import router as stats_router
 from app.db import engine
 from app.redis_client import redis_client
-
-import logging
-
 
 logging.basicConfig(
     level=logging.INFO,

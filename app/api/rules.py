@@ -1,15 +1,12 @@
-from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_session
 from app.models.rule import Rule
 from app.schemas.rule import RuleCreate, RuleRead, RuleUpdate
-
-from uuid import UUID
-
-from fastapi import HTTPException
-
 
 router = APIRouter(prefix="/api/v1/rules", tags=["rules"])
 

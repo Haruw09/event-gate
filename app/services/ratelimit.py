@@ -2,7 +2,6 @@ from uuid import UUID
 
 from app.redis_client import redis_client
 
-
 RATE_LIMIT = 10
 WINDOW_SEC = 60
 
