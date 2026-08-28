@@ -163,3 +163,17 @@ The CI pipeline:
 3. Applies Alembic migrations to a clean test database
 4. Runs Ruff
 5. Runs the pytest test suite
+
+## Limitations and Further Work
+
+- No message broker. Under higher ingestion load, a queue (e.g. Kafka)
+  would decouple ingestion from correlation; correlation currently runs
+  in the same transaction as ingestion.
+- Rules are evaluated on ingestion only, so a rule whose window expires
+  without new events will not fire until the next event arrives.
+  A scheduled worker would close this gap.
+- Authentication is a static per-source API key, sufficient for
+  service-to-service use but not for user-facing access control.
+- No metrics endpoint; observability is limited to structured logs.
+- Alert delivery (webhook, email) is out of scope — alerts are stored
+  and exposed via the API only.
