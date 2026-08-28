@@ -14,11 +14,14 @@ from app.schemas.event import (
     EventRead,
 )
 from app.services.correlation import create_alerts_for_event
+from app.redis_client import redis_client
 
 from uuid import UUID
 from datetime import datetime
-from fastapi import Query
+from fastapi import Query, APIRouter, Depends, Response, Header
 
+
+IDEMPOTENCY_TTL_SEC = 24 * 60 * 60
 
 router = APIRouter(prefix="/api/v1/events", tags=["events"])
 
@@ -27,10 +30,21 @@ router = APIRouter(prefix="/api/v1/events", tags=["events"])
 async def create_event(
     event: EventCreate,
     response: Response,
+    idempotency_key: str = Header(alias="Idempotency-Key"),
     source: Source = Depends(get_rate_limited_source),
     session: AsyncSession = Depends(get_session),
 ) -> Event:
     source_id = source.id
+
+    redis_key = f"idempotency:{source_id}:{idempotency_key}"
+
+    existing_event_id = await redis_client.get(redis_key)
+
+    if existing_event_id is not None:
+        existing_event = await session.get(Event, int(existing_event_id))
+        if existing_event is not None:
+            response.status_code = 200
+            return existing_event
 
     db_event = Event(
         source_id=source_id,
@@ -57,6 +71,12 @@ async def create_event(
 
         await session.commit()
 
+        await redis_client.set(
+            redis_key,
+            existing_event.id,
+            ex=IDEMPOTENCY_TTL_SEC,
+        )
+
         response.status_code = status.HTTP_200_OK
         return existing_event
 
@@ -64,6 +84,12 @@ async def create_event(
 
     await session.commit()
     await session.refresh(db_event)
+
+    await redis_client.set(
+        redis_key,
+        db_event.id,
+        ex=IDEMPOTENCY_TTL_SEC,
+    )
 
     return db_event
 
