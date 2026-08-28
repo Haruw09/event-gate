@@ -120,12 +120,18 @@ async def create_events_batch(
         .on_conflict_do_nothing(
             constraint="uq_events_source_external"
         )
+        .returning(Event)
     )
 
     result = await session.execute(stmt)
+    inserted_events = list(result.scalars().all())
+
+    for event in inserted_events:
+        await create_alerts_for_event(session, event)
+
     await session.commit()
 
-    return {"inserted": result.rowcount}
+    return {"inserted": len(inserted_events)}
 
 
 @router.get("", response_model=EventListResponse)
