@@ -5,6 +5,7 @@ from app.api.sources import router as sources_router
 from app.api.events import router as events_router
 from app.api.rules import router as rules_router
 from app.api.alerts import router as alerts_router
+from app.api.stats import router as stats_router
 from app.db import engine
 from app.redis_client import redis_client
 
@@ -15,6 +16,7 @@ app.include_router(sources_router)
 app.include_router(events_router)
 app.include_router(rules_router)
 app.include_router(alerts_router)
+app.include_router(stats_router)
 
 
 @app.get("/health")
