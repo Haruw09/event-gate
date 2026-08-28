@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 import pytest
 
 
@@ -177,3 +179,56 @@ async def test_batch_rejects_more_than_500_events(client):
     )
 
     assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_event_creates_alert_for_matching_rule(client):
+    source_response = await client.post(
+        "/api/v1/sources",
+        json={
+            "name": "correlation-source",
+            "api_key": "correlation-key",
+        },
+    )
+    assert source_response.status_code == 201
+
+    rule_response = await client.post(
+        "/api/v1/rules",
+        headers={"X-API-Key": "correlation-key"},
+        json={
+            "name": "high severity errors",
+            "event_type": "error",
+            "min_severity": 4,
+            "threshold": 1,
+            "window_sec": 60,
+        },
+    )
+    assert rule_response.status_code == 201
+
+    event_response = await client.post(
+        "/api/v1/events",
+        headers={
+            "X-API-Key": "correlation-key",
+            "Idempotency-Key": "correlation-event-1",
+        },
+        json={
+            "external_id": "correlation-event-1",
+            "severity": 5,
+            "event_type": "error",
+            "payload": {"message": "database unavailable"},
+            "occurred_at": datetime.now(UTC).isoformat(),
+        },
+    )
+    assert event_response.status_code == 201
+
+    alerts_response = await client.get(
+        "/api/v1/alerts",
+        headers={"X-API-Key": "correlation-key"},
+    )
+    assert alerts_response.status_code == 200
+
+    alerts = alerts_response.json()
+
+    assert len(alerts) == 1
+    assert alerts[0]["matched_count"] == 1
+    assert alerts[0]["status"] == "open"
