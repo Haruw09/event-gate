@@ -150,7 +150,7 @@ Run linting:
 python -m ruff check .
 ```
 
-The test suite covers health checks, source management, API-key authentication, event idempotency, batch ingestion, validation, and rate limiting.
+The test suite covers health checks, source management, API-key authentication, event idempotency, batch ingestion, validation, rate limiting, and correlation with alert creation.
 
 ## CI
 
