@@ -13,6 +13,7 @@ from app.schemas.event import (
     EventListResponse,
     EventRead,
 )
+from app.services.correlation import create_alerts_for_event
 
 from uuid import UUID
 from datetime import datetime
@@ -32,7 +33,7 @@ async def create_event(
     source_id = source.id
 
     db_event = Event(
-        source_id=source.id,
+        source_id=source_id,
         external_id=event.external_id,
         severity=event.severity,
         event_type=event.event_type,
@@ -40,13 +41,12 @@ async def create_event(
         occurred_at=event.occurred_at,
     )
 
-    session.add(db_event)
-
     try:
-        await session.commit()
-    except IntegrityError:
-        await session.rollback()
+        async with session.begin_nested():
+            session.add(db_event)
+            await session.flush()
 
+    except IntegrityError:
         result = await session.execute(
             select(Event).where(
                 Event.source_id == source_id,
@@ -55,10 +55,16 @@ async def create_event(
         )
         existing_event = result.scalar_one()
 
+        await session.commit()
+
         response.status_code = status.HTTP_200_OK
         return existing_event
 
+    await create_alerts_for_event(session, db_event)
+
+    await session.commit()
     await session.refresh(db_event)
+
     return db_event
 
 
