@@ -20,8 +20,12 @@ from uuid import UUID
 from datetime import datetime
 from fastapi import Query, APIRouter, Depends, Response, Header
 
+import logging
+
 
 IDEMPOTENCY_TTL_SEC = 24 * 60 * 60
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/events", tags=["events"])
 
@@ -89,6 +93,13 @@ async def create_event(
         redis_key,
         db_event.id,
         ex=IDEMPOTENCY_TTL_SEC,
+    )
+
+    logger.info(
+        "Event ingested: event_id=%s source_id=%s external_id=%s",
+        db_event.id,
+        source_id,
+        db_event.external_id,
     )
 
     return db_event

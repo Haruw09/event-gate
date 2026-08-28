@@ -9,6 +9,13 @@ from app.api.stats import router as stats_router
 from app.db import engine
 from app.redis_client import redis_client
 
+import logging
+
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
 
 app = FastAPI()
 
